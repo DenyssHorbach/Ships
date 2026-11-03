@@ -1,35 +1,65 @@
 import { createLoop } from './loop';
 import { createInput } from './input';
-import { integrate, wrapScreen } from './physics';
-import { setupCanvas, drawShip } from './render';
-import type { Ship } from './types';
+import { setupCanvas, renderWorld } from './render';
+import { Ship } from './ship';
+import { World } from './world';
+import { Vector2 } from './vector2';
+import { Asteroid } from './asteroid';
+import soundtrackSrc from './assets/soundtrack.mp3';
+
+const soundtrack = new Audio(soundtrackSrc);
+soundtrack.loop = true;
+soundtrack.volume = 0.25;
 
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const hud = document.getElementById('hud') as HTMLElement;
 
 const { ctx, width, height } = setupCanvas(canvas);
 const input = createInput();
+const world = new World(width, height);
 
-const ship: Ship = {
-    x: width / 2,
-    y: height / 2,
-    vx: 0,
-    vy: 0,
-    angle: 0
-};
+function startMusicOnInteraction() {
+    soundtrack.play().catch(() => {
+    });
+}
+
+window.addEventListener('keydown', startMusicOnInteraction, { once: true });
+window.addEventListener('pointerdown', startMusicOnInteraction, { once: true });
+
+let ship = world.spawn(new Ship(new Vector2(width / 2, height / 2)));
+let respawnTimer = 0;
+
+for (let i = 0; i < 6; i++){
+    world.spawn(Asteroid.spawnRandom(width, height));
+}
+
+window.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.code === 'Space' && !e.repeat) {
+        const b = ship.fire(world);
+    }
+});
 
 const loop = createLoop({
     update(dt) {
-        integrate(ship, input, dt);
-        wrapScreen(ship, width, height);
+        if (ship.alive){
+            ship.handleInput(input, dt);
+        } else {
+            if (respawnTimer <= 0){
+                respawnTimer = 2.0;
+            } else{
+                respawnTimer -= dt;
+                if (respawnTimer <= 0){
+                    ship = world.spawn(new Ship(new Vector2(width / 2, height / 2)));
+                }
+            }
+        }
+        world.step(dt);
     },
-    render(_alpha) {
-        ctx.fillStyle = '#111111';
-        ctx.fillRect(0, 0, width, height);
-        drawShip(ctx, ship);
+    render(_alpha){
+        renderWorld(ctx, world);
     },
-    onFpsUpdate({ steps, frames, frameTime }) {
-        hud.innerText = `Steps/s: ${steps} | Frames/s: ${frames} | Frame Time: ${frameTime} ms`;
+    onFpsUpdate({ steps, frames, frameTime}) {
+        hud.innerText = `HP: ${ship.hp} | Steps/s: ${steps} | FPS: ${frames} | Frame: ${frameTime} ms`;
     }
 });
 
