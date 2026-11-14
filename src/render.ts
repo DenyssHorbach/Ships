@@ -7,13 +7,16 @@ import { Particle } from './particle';
 import shipImageSrc from './assets/pirats/PNG/Default size/Ships/ship (1).png';
 import icebergImageSrc from './assets/pirats/PNG/Default size/Tiles/tile_67.png';
 import waterImageSrc from './assets/pirats/PNG/Default size/Tiles/tile_73.png';
+import BallImageSrc from './assets/pirats/PNG/Default size/Ship parts/cannonBall.png';
 
 const shipSprite = new Image();
 const icebergSprite = new Image();
 const waterSprite = new Image();
+const ballSprite = new Image();
 shipSprite.src = shipImageSrc;
 icebergSprite.src = icebergImageSrc;
 waterSprite.src = waterImageSrc;
+ballSprite.src = BallImageSrc;
 
 export function setupCanvas(canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d')!;
@@ -84,9 +87,17 @@ export function renderWorld(ctx: CanvasRenderingContext2D, world: World): void {
 
     ctx.fillStyle = '#ffcc00';
     for (const bullet of world.ofKind<Bullet>('bullet')) {
-        ctx.beginPath();
-        ctx.arc(bullet.pos.x, bullet.pos.y, bullet.radius, 0, Math.PI * 2);
-        ctx.fill();
+        if (ballSprite.complete && ballSprite.naturalWidth > 0) {
+            const size = bullet.radius * 4;
+            ctx.save();
+            ctx.translate(bullet.pos.x, bullet.pos.y);
+            ctx.drawImage(ballSprite, -size / 2, -size / 2, size, size);
+            ctx.restore();
+        } else {
+            ctx.beginPath();
+            ctx.arc(bullet.pos.x, bullet.pos.y, bullet.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 
     for (const asteroid of world.ofKind<Asteroid>('asteroid')) {

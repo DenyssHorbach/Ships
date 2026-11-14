@@ -35,7 +35,7 @@ for (let i = 0; i < 6; i++){
 
 window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.code === 'Space' && !e.repeat) {
-        const b = ship.fire(world);
+        ship.fire(world);
     }
 });
 

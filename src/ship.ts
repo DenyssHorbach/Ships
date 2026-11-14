@@ -43,18 +43,31 @@ export class Ship extends Entity{
 
 
     handleInput(input: GameInput, dt: number): void{
-        const ACCEL = 150;
-        const ROTATION_SPEED = Math.PI / 1.5;
+        const ACCEL = 100;
+        const ROTATION_SPEED = Math.PI / 3;
 
-        if (input.isDown('ArrowLeft') || input.isDown('KeyA')){
+        const isTurningLeft = input.isDown('ArrowLeft') || input.isDown('KeyA');
+        const isTurningRight = input.isDown('ArrowRight') || input.isDown('KeyD');
+        const isMovingForward = input.isDown('ArrowUp') || input.isDown('KeyW');
+
+        if (isTurningLeft && !isTurningRight){
             this.angle -= ROTATION_SPEED * dt;
-        }else if (input.isDown('ArrowRight') || input.isDown('KeyD')){
+        }
+        if (isTurningRight && !isTurningLeft){
             this.angle += ROTATION_SPEED * dt;
-        }else if (input.isDown('ArrowUp') || input.isDown('KeyW')){
-            const thrust = Vector2.fromAngle(this.angle, ACCEL * dt);
-            this.vel = this.vel.add(thrust);
         }
 
+        if (isMovingForward){
+            const forwardDir = new Vector2(Math.cos(this.angle), Math.sin(this.angle));
+            const isTurningBoost = (isTurningLeft || isTurningRight) ? 1.35 : 1;
+            const effectiveAccel = ACCEL * isTurningBoost;
+            this.vel = this.vel.add(forwardDir.scale(effectiveAccel * dt));
+        }
+
+        const MAX_SPEED = 300;
+        if (this.vel.length() > MAX_SPEED){
+            this.vel = this.vel.normalize().scale(MAX_SPEED);
+        }
     }
 
     override update(dt: number): void {
