@@ -4,20 +4,6 @@ import { Bullet } from './bullet';
 import { Asteroid } from './asteroid';
 import { Particle } from './particle';
 
-import shipImageSrc from './assets/pirats/PNG/Default size/Ships/ship (1).png';
-import icebergImageSrc from './assets/pirats/PNG/Default size/Tiles/tile_67.png';
-import waterImageSrc from './assets/pirats/PNG/Default size/Tiles/tile_73.png';
-import BallImageSrc from './assets/pirats/PNG/Default size/Ship parts/cannonBall.png';
-
-const shipSprite = new Image();
-const icebergSprite = new Image();
-const waterSprite = new Image();
-const ballSprite = new Image();
-shipSprite.src = shipImageSrc;
-icebergSprite.src = icebergImageSrc;
-waterSprite.src = waterImageSrc;
-ballSprite.src = BallImageSrc;
-
 export function setupCanvas(canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d')!;
     const dpr = window.devicePixelRatio || 1;
@@ -42,14 +28,14 @@ export function setupCanvas(canvas: HTMLCanvasElement) {
     return { ctx, width: dimensions.width, height: dimensions.height}
 }
 
-export function drawShip(ctx: CanvasRenderingContext2D, ship: Ship): void {
+export function drawShip(ctx: CanvasRenderingContext2D, ship: Ship, shipSprite?: HTMLImageElement): void {
     ctx.save();
     ctx.translate(ship.pos.x, ship.pos.y);
     ctx.rotate(ship.angle);
 
     // const SPRITE_SIZE = ship.radius * 2.8;
 
-    if (shipSprite.complete && shipSprite.naturalWidth > 0){
+    if (shipSprite && shipSprite.complete && shipSprite.naturalWidth > 0){
         const originWidth = shipSprite.naturalWidth;
         const originHeight = shipSprite.naturalHeight;
 
@@ -73,21 +59,28 @@ export function drawShip(ctx: CanvasRenderingContext2D, ship: Ship): void {
     ctx.restore();
 }
 
-export function renderWorld(ctx: CanvasRenderingContext2D, world: World): void {
-    if(waterSprite.complete && waterSprite.naturalWidth > 0){
+export function renderWorld(ctx: CanvasRenderingContext2D, world: World, images: Map<string, HTMLImageElement>): void {
+    //water
+    const waterSprite = images.get('water');
+    if (waterSprite && waterSprite.complete && waterSprite.naturalWidth > 0) {
         const pattern = ctx.createPattern(waterSprite, 'repeat');
-        if (pattern){
+        if (pattern) {
             ctx.fillStyle = pattern;
             ctx.fillRect(0, 0, world.width, world.height);
         } else {
             ctx.fillStyle = '#111111';
             ctx.fillRect(0, 0, world.width, world.height);
         }
+    } else {
+        ctx.fillStyle = '#111111';
+        ctx.fillRect(0, 0, world.width, world.height);
     }
 
+    //bullets
+    const ballSprite = images.get('ball');
     ctx.fillStyle = '#ffcc00';
     for (const bullet of world.ofKind<Bullet>('bullet')) {
-        if (ballSprite.complete && ballSprite.naturalWidth > 0) {
+        if (ballSprite && ballSprite.complete && ballSprite.naturalWidth > 0) {
             const size = bullet.radius * 4;
             ctx.save();
             ctx.translate(bullet.pos.x, bullet.pos.y);
@@ -100,8 +93,10 @@ export function renderWorld(ctx: CanvasRenderingContext2D, world: World): void {
         }
     }
 
+    //Icebergs
+    const icebergSprite = images.get('iceberg');
     for (const asteroid of world.ofKind<Asteroid>('asteroid')) {
-        if (icebergSprite.complete && icebergSprite.naturalWidth > 0) {
+        if (icebergSprite && icebergSprite.complete && icebergSprite.naturalWidth > 0) {
             const origW = icebergSprite.naturalWidth;
             const origH = icebergSprite.naturalHeight;
 
@@ -124,10 +119,13 @@ export function renderWorld(ctx: CanvasRenderingContext2D, world: World): void {
         }
     }
 
+    //ship
+    const shipSprite = images.get('ship');
     for (const ship of world.ofKind<Ship>('ship')) {
-        drawShip(ctx, ship);
+        drawShip(ctx, ship, shipSprite);
     }
 
+    //particles
     for (const p of world.ofKind<Particle>('particle')) {
         ctx.save();
         ctx.globalAlpha = p.alpha;

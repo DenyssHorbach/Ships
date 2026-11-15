@@ -8,6 +8,8 @@ export class Ship extends Entity{
     #hp: number;
     readonly maxHp: number;
     angle = 0;
+    private lastShotTime = 0;
+    private shootCooldown = 2.7;
 
     constructor(pos: Vector2, maxHp = 3){
         super('ship', pos, 15);
@@ -31,6 +33,12 @@ export class Ship extends Entity{
     }
 
     fire(world: World): Bullet | null {
+        const currentTime = performance.now() / 1000;
+
+        if (currentTime - this.lastShotTime < this.shootCooldown){
+            return null;
+        }
+        this.lastShotTime = currentTime;
         if (!this.alive)
             return null;
         const BULLET_SPEED = 500;

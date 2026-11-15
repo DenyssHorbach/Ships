@@ -5,62 +5,138 @@ import { Ship } from './ship';
 import { World } from './world';
 import { Vector2 } from './vector2';
 import { Asteroid } from './asteroid';
-import soundtrackSrc from './assets/soundtrack.mp3';
+import { loadAssets } from './loader';
+import { Lobby } from './lobby';
+import { playSound } from './playSound';
 
-const soundtrack = new Audio(soundtrackSrc);
+const manifestUrl = '/assets/manifest.json';
+
+
+
+const soundtrack = new Audio('/assets/soundtrack.mp3');
 soundtrack.loop = true;
 soundtrack.volume = 0.25;
 
-const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-const hud = document.getElementById('hud') as HTMLElement;
-
-const { ctx, width, height } = setupCanvas(canvas);
-const input = createInput();
-const world = new World(width, height);
-
 function startMusicOnInteraction() {
-    soundtrack.play().catch(() => {
-    });
+    soundtrack.play().catch(() => {});
 }
 
 window.addEventListener('keydown', startMusicOnInteraction, { once: true });
 window.addEventListener('pointerdown', startMusicOnInteraction, { once: true });
 
-let ship = world.spawn(new Ship(new Vector2(width / 2, height / 2)));
-let respawnTimer = 0;
-
-for (let i = 0; i < 6; i++){
-    world.spawn(Asteroid.spawnRandom(width, height));
+function loadSingleImage(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+    });
 }
 
-window.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.code === 'Space' && !e.repeat) {
-        ship.fire(world);
-    }
-});
+async function initGame() {
+    const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+    const hud = document.getElementById('hud') as HTMLElement;
+    const { ctx, width, height } = setupCanvas(canvas);
 
-const loop = createLoop({
-    update(dt) {
-        if (ship.alive){
-            ship.handleInput(input, dt);
+    let loadScreenImg: HTMLImageElement | null = null;
+    try {
+        loadScreenImg = await loadSingleImage('/assets/loadScreen.png')
+    } catch(e) {
+        console.warn('Loadscreen image not found')
+    }
+
+    const drawLoadingScreen = (loaded: number, total: number) => {
+        ctx.clearRect(0, 0, width, height);
+        if (loadScreenImg && loadScreenImg.complete){
+            ctx.drawImage(loadScreenImg, 0, 0, width, height);
         } else {
-            if (respawnTimer <= 0){
-                respawnTimer = 2.0;
-            } else{
-                respawnTimer -= dt;
-                if (respawnTimer <= 0){
-                    ship = world.spawn(new Ship(new Vector2(width / 2, height / 2)));
+            ctx.fillStyle = '#0b0f19';
+            ctx.fillRect(0, 0, width, height);
+        }
+    };
+
+    try {
+        drawLoadingScreen(0, 1);
+
+        const assets = await loadAssets(manifestUrl, (loaded, total) => {
+            drawLoadingScreen(loaded, total);
+        });
+
+        console.log('All assets loaded successfully!', assets);
+
+        const lobby = new Lobby('lobbyContainer');
+        await lobby.render();
+
+        lobby.addEventListener('join', ((e: CustomEvent) => {
+            const { playerName, room } = e.detail;
+            console.log(`Player "${playerName}" joined room:`, room);
+            lobby.destroy();
+            startGame(assets, playerName, room);
+
+        })as EventListener, { once: true });
+    } catch (error) {
+        console.error('Failed to load game assets:', error);
+        ctx.fillStyle = '#ff0000';
+        ctx.font = '20px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('Failed to load assets. Check console.', width / 2, height / 2);
+    }
+}
+
+function startGame(assets: { images: Map<string, HTMLImageElement>, audioBuffers: Map<string, ArrayBuffer> }, playerName: string, room: any) {
+    const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+    const hud = document.getElementById('hud') as HTMLElement;
+    const { ctx, width, height } = setupCanvas(canvas);
+
+    const input = createInput();
+    const world = new World(width, height);
+
+    let ship = world.spawn(new Ship(new Vector2(width / 2, height / 2)));
+    let respawnTimer = 0;
+
+    for (let i = 0; i < 6; i++) {
+        world.spawn(Asteroid.spawnRandom(width, height));
+    }
+
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.code === 'Space' && !e.repeat && ship.alive) {
+            const bullet = ship.fire(world);
+            if (bullet !== null) {
+                const shotAudio = playSound(assets.audioBuffers, 'shot', 0.9);
+                if (shotAudio){
+                    shotAudio.onended = () => {
+                        playSound(assets.audioBuffers, 'reload', 0.8);
+                    }
                 }
             }
         }
-        world.step(dt);
-    },
-    render(_alpha){
-        renderWorld(ctx, world);
-    },
-    onFpsUpdate({ steps, frames, frameTime}) {
-        hud.innerText = `HP: ${ship.hp} | Steps/s: ${steps} | FPS: ${frames} | Frame: ${frameTime} ms`;
-    }
-});
+    });
 
-loop.start();
+    const loop = createLoop({
+        update(dt) {
+            if (ship.alive) {
+                ship.handleInput(input, dt);
+            } else {
+                if (respawnTimer <= 0) {
+                    respawnTimer = 2.0;
+                } else {
+                    respawnTimer -= dt;
+                    if (respawnTimer <= 0) {
+                        ship = world.spawn(new Ship(new Vector2(width / 2, height / 2)));
+                    }
+                }
+            }
+            world.step(dt);
+        },
+        render(_alpha) {
+            renderWorld(ctx, world, assets.images);
+        },
+        onFpsUpdate({ steps, frames, frameTime }) {
+            hud.innerText = `Player: ${playerName} | Room: ${room.name} | HP: ${ship.hp} | FPS: ${frames}`;
+        }
+    });
+
+    loop.start();
+}
+
+initGame();

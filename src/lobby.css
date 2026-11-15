@@ -1,0 +1,86 @@
+/* Контейнер лобі */
+.lobby-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100;
+}
+
+.lobby-card {
+    background: linear-gradient(135deg, #2A1810 0%, #1A0F0A 100%);
+    padding: 35px;
+    border-radius: 16px;
+    border: 2px solid #7B4D33;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    color: #F3E5DC;
+    font-family: monospace;
+    text-align: center;
+    max-width: 420px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.lobby-title {
+    margin-bottom: 25px;
+    color: #B97A57;
+    font-size: 24px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.lobby-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.lobby-label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 8px;
+    color: #B97A57;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.lobby-input,
+.lobby-select {
+    width: 100%;
+    padding: 10px 12px;
+    background: #140B07;
+    border: 1px solid #7B4D33;
+    color: #F3E5DC;
+    border-radius: 6px;
+    font-family: monospace;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.lobby-input:focus,
+.lobby-select:focus {
+    border-color: #B97A57;
+}
+
+.lobby-btn {
+    width: 100%;
+    padding: 12px;
+    background: #B97A57;
+    border: none;
+    font-weight: bold;
+    color: #1A0F0A;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 15px;
+    letter-spacing: 1px;
+    transition: background 0.2s;
+}
+
+.lobby-btn:hover {
+    background: #C88B69;
+}
