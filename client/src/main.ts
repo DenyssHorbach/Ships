@@ -8,6 +8,10 @@ import { Asteroid } from './asteroid';
 import { loadAssets } from './loader';
 import { Lobby } from './lobby';
 import { playSound } from './playSound';
+import { ClientSocket } from './socket';
+
+// const gameSocket = new ClientSocket(`ws://${window.location.host}/ws`);
+const gameSocket = new ClientSocket('ws://localhost:3000');
 
 const manifestUrl = '/assets/manifest.json';
 
@@ -42,11 +46,21 @@ async function showLobby(assets: any) {
     lobby.addEventListener('join', ((e: CustomEvent) => {
         const { playerName, room } = e.detail;
         console.log(`Player "${playerName}" joined room:`, room);
+
+        gameSocket.connect();
+        gameSocket.onMessage = (data) => {
+            console.log('message from server ', data);
+        }
+        gameSocket.send({
+            type: 'join',
+            roomName: room,
+            playerName: playerName
+        })
         
         lobby.destroy();
         
         startGame(assets, playerName, room);
-    }) as EventListener, { once: true }); // <--- ТУТ МАЄ БУТИ once: true, інакше слухачі будуть накопичуватися!
+    }) as EventListener, { once: true });
 }
 
 async function initGame() {
