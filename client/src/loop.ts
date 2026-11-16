@@ -4,7 +4,7 @@ export function createLoop({ update, render, onFpsUpdate }: LoopOptions) {
     const FIXED_STEP = 1000 / 60;
     let accumulator = 0;
     let lastTime = performance.now();
-    
+    let animationFrameId: number | null = null;
     let stepsCount = 0;
     let framesCount = 0;
     let lastFpsUpdate = lastTime;
@@ -44,6 +44,13 @@ export function createLoop({ update, render, onFpsUpdate }: LoopOptions) {
         start() {
             lastTime = performance.now();
             requestAnimationFrame(frame);
+        },
+
+        stop() {
+            if (animationFrameId !== null) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
         }
     };
 }

@@ -3,6 +3,11 @@ import { Vector2 } from "./vector2";
 import type { GameInput } from "./types";
 import { Bullet } from "./bullet";
 import { World } from "./world";
+import {playSound} from "./playSound";
+import { loadAssets } from "./loader";
+
+const manifestUrl = '/assets/manifest.json';
+const assets = await loadAssets(manifestUrl);
 
 export class Ship extends Entity{
     #hp: number;
@@ -24,8 +29,11 @@ export class Ship extends Entity{
     takeDamage(amount = 1): void {
         if (!this.alive) return;
         this.#hp = Math.max(0, this.#hp - amount);
-        if (this.#hp === 0)
+        if (this.#hp === 0) {
             this.kill();
+            playSound(assets.audioBuffers, 'death', 0.9);
+        }
+
     }
 
     heal(amount = 1):void {
@@ -51,8 +59,8 @@ export class Ship extends Entity{
 
 
     handleInput(input: GameInput, dt: number): void{
-        const ACCEL = 100;
-        const ROTATION_SPEED = Math.PI / 3;
+        const ACCEL = 400;
+        const ROTATION_SPEED = Math.PI;
 
         const isTurningLeft = input.isDown('ArrowLeft') || input.isDown('KeyA');
         const isTurningRight = input.isDown('ArrowRight') || input.isDown('KeyD');

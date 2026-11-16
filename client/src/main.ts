@@ -12,7 +12,7 @@ import { playSound } from './playSound';
 const manifestUrl = '/assets/manifest.json';
 
 
-
+const lobby = new Lobby('lobbyContainer');
 const soundtrack = new Audio('/assets/soundtrack.mp3');
 soundtrack.loop = true;
 soundtrack.volume = 0.25;
@@ -33,9 +33,25 @@ function loadSingleImage(url: string): Promise<HTMLImageElement> {
     });
 }
 
+async function showLobby(assets: any) {
+    const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+    if (canvas) canvas.style.display = 'none';
+
+    await lobby.render();
+
+    lobby.addEventListener('join', ((e: CustomEvent) => {
+        const { playerName, room } = e.detail;
+        console.log(`Player "${playerName}" joined room:`, room);
+        
+        lobby.destroy();
+        
+        startGame(assets, playerName, room);
+    }) as EventListener, { once: true }); // <--- ТУТ МАЄ БУТИ once: true, інакше слухачі будуть накопичуватися!
+}
+
 async function initGame() {
     const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-    const hud = document.getElementById('hud') as HTMLElement;
+    // const hud = document.getElementById('hud') as HTMLElement;
     const { ctx, width, height } = setupCanvas(canvas);
 
     let loadScreenImg: HTMLImageElement | null = null;
@@ -45,7 +61,7 @@ async function initGame() {
         console.warn('Loadscreen image not found')
     }
 
-    const drawLoadingScreen = (loaded: number, total: number) => {
+    const drawLoadingScreen = (_loaded: number, _total: number) => {
         ctx.clearRect(0, 0, width, height);
         if (loadScreenImg && loadScreenImg.complete){
             ctx.drawImage(loadScreenImg, 0, 0, width, height);
@@ -64,16 +80,8 @@ async function initGame() {
 
         console.log('All assets loaded successfully!', assets);
 
-        const lobby = new Lobby('lobbyContainer');
-        await lobby.render();
-
-        lobby.addEventListener('join', ((e: CustomEvent) => {
-            const { playerName, room } = e.detail;
-            console.log(`Player "${playerName}" joined room:`, room);
-            lobby.destroy();
-            startGame(assets, playerName, room);
-
-        })as EventListener, { once: true });
+        // const lobby = new Lobby('lobbyContainer');
+        showLobby(assets);
     } catch (error) {
         console.error('Failed to load game assets:', error);
         ctx.fillStyle = '#ff0000';
@@ -85,14 +93,17 @@ async function initGame() {
 
 function startGame(assets: { images: Map<string, HTMLImageElement>, audioBuffers: Map<string, ArrayBuffer> }, playerName: string, room: any) {
     const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+    if (canvas) canvas.style.display = 'block';
+
     const hud = document.getElementById('hud') as HTMLElement;
     const { ctx, width, height } = setupCanvas(canvas);
+    const abortController = new AbortController();
 
     const input = createInput();
     const world = new World(width, height);
 
     let ship = world.spawn(new Ship(new Vector2(width / 2, height / 2)));
-    let respawnTimer = 0;
+    // let respawnTimer = 0;
 
     for (let i = 0; i < 6; i++) {
         world.spawn(Asteroid.spawnRandom(width, height));
@@ -110,28 +121,22 @@ function startGame(assets: { images: Map<string, HTMLImageElement>, audioBuffers
                 }
             }
         }
-    });
+    }, { signal: abortController.signal } );
 
     const loop = createLoop({
         update(dt) {
             if (ship.alive) {
                 ship.handleInput(input, dt);
             } else {
-                if (respawnTimer <= 0) {
-                    respawnTimer = 2.0;
-                } else {
-                    respawnTimer -= dt;
-                    if (respawnTimer <= 0) {
-                        ship = world.spawn(new Ship(new Vector2(width / 2, height / 2)));
-                    }
-                }
+                loop.stop();
+                showLobby(assets);
             }
             world.step(dt);
         },
         render(_alpha) {
             renderWorld(ctx, world, assets.images);
         },
-        onFpsUpdate({ steps, frames, frameTime }) {
+        onFpsUpdate({ frames }) {
             hud.innerText = `Player: ${playerName} | Room: ${room.name} | HP: ${ship.hp} | FPS: ${frames}`;
         }
     });

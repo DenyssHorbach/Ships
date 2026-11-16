@@ -3,11 +3,13 @@
         "ship": "/assets/pirats/PNG/Default size/Ships/ship (1).png",
         "iceberg": "/assets/pirats/PNG/Default size/Tiles/tile_67.png",
         "water": "/assets/pirats/PNG/Default size/Tiles/tile_73.png",
-        "ball": "/assets/pirats/PNG/Default size/Ship parts/cannonBall.png"
+        "ball": "/assets/pirats/PNG/Default size/Ship parts/cannonBall.png",
+        "loadScreen": "/assets/loadScreen.png"
     },
     "audio": {
         "soundtrack": "/assets/soundtrack.mp3",
         "shot": "/assets/sounds/shot.mp3",
-        "reload": "/assets/sounds/reload.mp3"
+        "reload": "/assets/sounds/reload.mp3",
+        "death": "/assets/sounds/death.mp3"
     }
 }

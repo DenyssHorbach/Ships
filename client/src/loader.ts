@@ -11,7 +11,7 @@ export async function loadImage(url: string, signal?: AbortSignal): Promise<HTML
             signal.addEventListener('abort', () => reject(new Error('Aborted')));
         }
         img.onload = () => resolve(img);
-        img.onerror = (err) => {
+        img.onerror = (_err) => {
             console.error(`Помилка завантаження зображення за шляхом: ${url}`);
         }
         img.src = url;

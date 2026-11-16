@@ -1,4 +1,4 @@
-import './lobby.css'
+import '/src/lobby.css'
 
 export interface Room {
     id: number | string;
@@ -96,5 +96,12 @@ export class Lobby extends EventTarget {
         }
         this.container.innerHTML = '';
         this.container.style.display = 'none';
+    }
+
+    show(): void {
+        if (this.container){
+            this.container.style.display = 'flex';
+            this.container.style.pointerEvents = 'auto';
+        }
     }
 }
