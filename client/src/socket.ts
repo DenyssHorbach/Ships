@@ -2,7 +2,7 @@ export class ClientSocket {
     private ws: WebSocket | null = null;
     private url: string;
     private reconnectDelay: number = 1000;
-    private maxReconnectDelay: number = 16000; // Максимальна пауза — 16 секунд
+    private maxReconnectDelay: number = 16000;
     private sendQueue: string[] = [];
     public onMessage: ((data: any) => void) | null = null;
 
@@ -16,8 +16,8 @@ export class ClientSocket {
 
         this.ws.onopen = () => {
             console.log('[Socket] З\'єднання встановлено!');
-            this.reconnectDelay = 1000; // Скидаємо затримку після успішного підключення
-            this.flushQueue(); // Відправляємо все, що накопичилося
+            this.reconnectDelay = 1000;
+            this.flushQueue();
         };
 
         this.ws.onmessage = (event) => {
@@ -36,11 +36,9 @@ export class ClientSocket {
 
         this.ws.onerror = (error) => {
             console.error('[Socket] Помилка з\'єднання:', error);
-            // Після onerror завжди викликається onclose, тому реконект робимо там
         };
     }
 
-    // Надсилання повідомлення або додавання в чергу, якщо офлайн
     send(data: any) {
         const message = JSON.stringify(data);
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -51,7 +49,6 @@ export class ClientSocket {
         }
     }
 
-    // Виштовхування черги після відновлення зв'язку
     private flushQueue() {
         while (this.sendQueue.length > 0 && this.ws?.readyState === WebSocket.OPEN) {
             const message = this.sendQueue.shift();
@@ -59,7 +56,6 @@ export class ClientSocket {
         }
     }
 
-    // Експоненційне збільшення паузи при реконекті (1с, 2с, 4с, 8с...)
     private scheduleReconnect() {
         console.log(`[Socket] Спроба перепідключення через ${this.reconnectDelay / 1000} секунд...`);
         

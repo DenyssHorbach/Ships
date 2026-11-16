@@ -9,21 +9,16 @@ import { Room } from './Room.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Шлях до зібраного клієнта (папка dist у клієнті)
 const CLIENT_DIST = path.join(__dirname, '../../client/dist');
 
-// ==========================================
-// 1. HTTP СЕРВЕР ТА РОУТИНГ
-// ==========================================
+
 const server = http.createServer((req, res) => {
-    // 1.1 Роути API
     if (req.url === '/health' && req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'ok' }));
         return;
     }
 
-    // Отримати список активних кімнат
     if (req.url === '/api/rooms' && req.method === 'GET') {
         const roomList = Array.from(rooms.keys());
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -31,7 +26,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // Створити нову кімнату через POST запит
     if (req.url === '/api/rooms' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
@@ -56,17 +50,14 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // 1.2 Роздача статичних файлів клієнта з захистом від .. (Path Traversal)
     let filePath = path.join(CLIENT_DIST, req.url === '/' ? 'index.html' : req.url);
     
-    // Перевірка на хакерські шляхи з ".."
     if (req.url.includes('..') || !filePath.startsWith(CLIENT_DIST)) {
         res.writeHead(403, { 'Content-Type': 'text/plain' });
         res.end('Access denied');
         return;
     }
 
-    // Визначаємо MIME-тип файлу
     const extname = path.extname(filePath);
     let contentType = 'text/html';
     if (extname === '.js') contentType = 'application/javascript';
@@ -74,10 +65,8 @@ const server = http.createServer((req, res) => {
     else if (extname === '.png') contentType = 'image/png';
     else if (extname === '.jpg') contentType = 'image/jpeg';
 
-    // Читаємо файл і віддаємо
     fs.readFile(filePath, (err, content) => {
         if (err) {
-            // Якщо файл не знайдено, можна віддавати index.html для SPA роутингу, або 404
             if (err.code === 'ENOENT') {
                 res.writeHead(404, { 'Content-Type': 'text/plain' });
                 res.end('Not Found');
@@ -92,9 +81,9 @@ const server = http.createServer((req, res) => {
     });
 });
 
-// ==========================================
-// 2. WEBSOCKET СЕРВЕР ТА КІМНАТИ
-// ==========================================
+
+
+
 const wss = new WebSocketServer({ server });
 const rooms = new Map();
 
@@ -171,9 +160,9 @@ wss.on('connection', (ws) => {
     });
 });
 
-// ==========================================
-// 3. ЗАПУСК ТА ЗАВЕРШЕННЯ
-// ==========================================
+
+
+
 server.listen(config.port, () => {
     console.log(`Сервер працює на порту ${config.port}`);
 });

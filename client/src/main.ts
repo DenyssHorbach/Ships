@@ -10,8 +10,8 @@ import { Lobby } from './lobby';
 import { playSound } from './playSound';
 import { ClientSocket } from './socket';
 
-// const gameSocket = new ClientSocket(`ws://${window.location.host}/ws`);
-const gameSocket = new ClientSocket('ws://localhost:3000');
+const gameSocket = new ClientSocket(`ws://${window.location.host}/ws`);
+// const gameSocket = new ClientSocket('ws://localhost:3000');
 
 const manifestUrl = '/assets/manifest.json';
 

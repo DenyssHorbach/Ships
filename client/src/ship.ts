@@ -59,8 +59,8 @@ export class Ship extends Entity{
 
 
     handleInput(input: GameInput, dt: number): void{
-        const ACCEL = 400;
-        const ROTATION_SPEED = Math.PI;
+        const ACCEL = 100;
+        const ROTATION_SPEED = Math.PI * 0.4;
 
         const isTurningLeft = input.isDown('ArrowLeft') || input.isDown('KeyA');
         const isTurningRight = input.isDown('ArrowRight') || input.isDown('KeyD');
